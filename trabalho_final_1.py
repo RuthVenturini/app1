@@ -7,22 +7,6 @@ Original file is located at
     https://colab.research.google.com/drive/14JD2HuHA2Gzu1-GcHOTDTJSIbijt2NzQ
 """
 
-!pip install streamlit
-!pip install newsapi-python
-!pip install pandas
-!pip install geopandas
-!pip install matplotlib
-!pip install plotly
-!pip install folium
-!pip install streamlit-folium
-!pip install spacy
-!pip install nltk
-!pip install deep-translator
-!pip install geopy
-!pip install unidecode
-!pip install wordcloud
-!pip install openpyxl
-
 # =====================================================
 # Agente IA - Violência contra a Mulher no Brasil
 # Parte 1 - Configuração Inicial
@@ -115,9 +99,7 @@ with col2:
     if newsapi:
         st.metric("API", "Conectada")
     else:
-        st.metric("API", "Não conectada")
-
-import pandas as pd
+        st.metric("API", "Não conectada")import pandas as pd
 
 # -----------------------------------
 # Busca de notícias
