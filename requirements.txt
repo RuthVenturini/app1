@@ -13,3 +13,8 @@ geopy
 unidecode
 wordcloud
 openpyxl
+requests
+numpy
+shapely
+pyproj
+fiona

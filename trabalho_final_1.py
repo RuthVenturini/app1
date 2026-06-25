@@ -7,62 +7,112 @@ Original file is located at
     https://colab.research.google.com/drive/14JD2HuHA2Gzu1-GcHOTDTJSIbijt2NzQ
 """
 
-# =====================================================
-# Agente IA - Violência contra a Mulher no Brasil
-# Parte 1 - Configuração Inicial
-# =====================================================
-
 import streamlit as st
+import pandas as pd
 from newsapi import NewsApiClient
 
-# -----------------------------
+# ----------------------------------------------------
 # Configuração da página
-# -----------------------------
+# ----------------------------------------------------
+
 st.set_page_config(
-    page_title="Agente IA - Violência contra a Mulher",
+    page_title="Violência contra a Mulher no Brasil",
     page_icon="📰",
     layout="wide"
 )
 
 st.title("📰 Agente IA - Violência contra a Mulher no Brasil")
 
-st.markdown(
+st.markdown("""
+Este agente utiliza **Processamento de Linguagem Natural (PLN)** para identificar,
+a partir de notícias publicadas em portais online, ocorrências de violência contra a mulher
+no Brasil para um ano específico.
+
+**Fluxo do projeto**
+
+1. Pesquisar notícias;
+2. Aplicar PLN;
+3. Identificar o estado citado;
+4. Gerar tabelas;
+5. Gerar gráficos;
+6. Produzir mapa temático.
+""")
+
+# ----------------------------------------------------
+# Barra lateral
+# ----------------------------------------------------
+
+st.sidebar.title("Configuração")
+
+st.sidebar.subheader("NewsAPI")
+
+col1, col2 = st.sidebar.columns([5,1])
+
+with col1:
+
+    api_key = st.text_input(
+        "Chave da NewsAPI",
+        type="password",
+        placeholder="Cole sua chave aqui..."
+    )
+
+with col2:
+
+    st.link_button(
+        "ℹ️",
+        "https://newsapi.org/register",
+        help="""
+Crie gratuitamente sua chave na NewsAPI.
+
+Clique para acessar o site oficial.
 """
-Este agente utiliza **Processamento de Linguagem Natural (PLN)** para
-identificar notícias sobre violência contra a mulher e localizar
-as ocorrências por estado brasileiro.
+    )
+
+if not api_key:
+
+    st.sidebar.info(
+        """
+Para utilizar o sistema é necessário possuir uma chave da NewsAPI.
+
+Clique no botão ℹ️ para criar gratuitamente sua chave.
 """
-)
+    )
 
-# =====================================================
-# NEWS API
-# =====================================================
-
-st.sidebar.header("Configuração")
-
-api_key = st.sidebar.text_input(
-    "Chave da NewsAPI",
-    type="password",
-    help="Informe sua chave da NewsAPI."
-)
-
-# =====================================================
-# Seleção do Ano
-# =====================================================
+# ----------------------------------------------------
+# Ano
+# ----------------------------------------------------
 
 anos = list(range(2000, 2027))
 
 ano = st.sidebar.selectbox(
-    "Selecione o ano",
+    "Ano da pesquisa",
     anos,
     index=len(anos)-1
 )
 
-st.sidebar.write(f"Ano selecionado: **{ano}**")
+# ----------------------------------------------------
+# Consulta
+# ----------------------------------------------------
 
-# =====================================================
-# Inicialização da API
-# =====================================================
+consulta = st.sidebar.text_input(
+    "Palavras-chave",
+    value="violência contra mulher OR feminicídio OR violência doméstica"
+)
+
+quantidade = st.sidebar.selectbox(
+    "Quantidade máxima",
+    [20,50,100,200],
+    index=1
+)
+
+buscar = st.sidebar.button(
+    "🔎 Buscar Notícias",
+    use_container_width=True
+)
+
+# ----------------------------------------------------
+# Inicialização
+# ----------------------------------------------------
 
 newsapi = None
 
@@ -72,50 +122,104 @@ if api_key:
 
         newsapi = NewsApiClient(api_key=api_key)
 
-        st.sidebar.success("NewsAPI conectada!")
+        st.sidebar.success("NewsAPI conectada.")
 
     except Exception as erro:
 
-        st.sidebar.error(f"Erro: {erro}")
+        st.sidebar.error(str(erro))
 
-else:
-
-    st.sidebar.warning("93b9e068eed1473e957627550b9385f7")
-
-# =====================================================
+# ----------------------------------------------------
 # Área principal
-# =====================================================
+# ----------------------------------------------------
 
-st.subheader("Configuração")
+c1,c2,c3 = st.columns(3)
 
-col1, col2 = st.columns(2)
+c1.metric("Ano", ano)
 
-with col1:
-
-    st.metric("Ano", ano)
-
-with col2:
-
-    if newsapi:
-        st.metric("API", "Conectada")
-    else:
-        st.metric("API", "Não conectada")import pandas as pd
-
-# -----------------------------------
-# Busca de notícias
-# -----------------------------------
-
-st.sidebar.divider()
-
-consulta = st.sidebar.text_input(
-    "Palavras-chave",
-    value="violência contra mulher OR feminicídio OR violência doméstica"
+c2.metric(
+    "API",
+    "Conectada" if newsapi else "Não conectada"
 )
 
-quantidade = st.sidebar.selectbox(
+c3.metric(
     "Máximo de notícias",
-    [20,50,100,200],
-    index=1
+    quantidade
 )
 
-buscar = st.sidebar.button("Buscar Notícias")
+st.divider()
+
+# ----------------------------------------------------
+# Busca
+# ----------------------------------------------------
+
+if buscar:
+
+    if not newsapi:
+
+        st.error("Informe uma chave válida da NewsAPI.")
+
+    else:
+
+        with st.spinner("Pesquisando notícias..."):
+
+            try:
+
+                resultado = newsapi.get_everything(
+
+                    q=consulta,
+
+                    language="pt",
+
+                    sort_by="publishedAt",
+
+                    page_size=quantidade
+
+                )
+
+                artigos = resultado["articles"]
+
+                dados = []
+
+                for artigo in artigos:
+
+                    dados.append({
+
+                        "Data": artigo["publishedAt"][:10],
+
+                        "Fonte": artigo["source"]["name"],
+
+                        "Título": artigo["title"],
+
+                        "Descrição": artigo["description"],
+
+                        "URL": artigo["url"]
+
+                    })
+
+                df = pd.DataFrame(dados)
+
+                st.success(f"{len(df)} notícias encontradas.")
+
+                st.dataframe(
+                    df,
+                    use_container_width=True,
+                    hide_index=True
+                )
+
+                csv = df.to_csv(index=False).encode("utf-8")
+
+                st.download_button(
+
+                    "📥 Baixar CSV",
+
+                    csv,
+
+                    "noticias.csv",
+
+                    "text/csv"
+
+                )
+
+            except Exception as erro:
+
+                st.error(str(erro))
