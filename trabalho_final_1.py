@@ -238,7 +238,13 @@ if buscar:
             subset=["Link"],
             inplace=True
         )
-
+        df_final.reset_index(
+            drop=True,
+            inplace=True
+        )
+        
+        # Salva o resultado para reutilizar nos gráficos
+        st.session_state["df_final"] = df_final
         # ----------------------------------------------------
         # Extrair o portal a partir do título
         # ----------------------------------------------------
