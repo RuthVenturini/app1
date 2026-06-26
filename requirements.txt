@@ -1,12 +1,3 @@
 streamlit
 pandas
-requests
-beautifulsoup4
-lxml
-spacy
-geopandas
-matplotlib
-plotly
-folium
-streamlit-folium
-openpyxl
+newsapi-python
