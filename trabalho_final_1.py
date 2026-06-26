@@ -385,7 +385,7 @@ if "df_final" in st.session_state and "ocorrencias" in st.session_state:
                                         va='center',
                                         fontsize=9,
                                         color='black',
-                                        weight='bold'
+                                        weight='bold',
                                         path_effects=[path_effects.withStroke(linewidth=3, foreground='white')]
                                     )
             
