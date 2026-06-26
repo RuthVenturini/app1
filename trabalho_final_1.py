@@ -344,7 +344,7 @@ if "df_final" in st.session_state and "ocorrencias" in st.session_state:
     
     if gerar_mapa:
         try:
-        
+            import matplotlib.patheffects as path_effects
             # Lê o GeoPackage
             uf = gpd.read_file("BR_UF.gpkg")
             
@@ -386,6 +386,7 @@ if "df_final" in st.session_state and "ocorrencias" in st.session_state:
                                         fontsize=9,
                                         color='black',
                                         weight='bold'
+                                        path_effects=[path_effects.withStroke(linewidth=3, foreground='white')]
                                     )
             
             ax.set_title("Violência contra a mulher: Menções por Estado", fontdict={'fontsize': 14})
