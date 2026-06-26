@@ -421,10 +421,11 @@ def localizar_estado(texto):
         )
         
         st.button("🗺️ Gerar mapa")
+
         if st.button("🗺️ Gerar mapa"):
-        uf = gpd.read_file(
-            "dados/BR_UF_2024.zip"
-        )
+            uf = gpd.read_file(
+                "dados/BR_UF_2024.zip"
+            )
 
         mapa = uf.merge(
         
