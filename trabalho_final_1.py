@@ -183,58 +183,54 @@ if buscar:
         st.error("Informe uma chave válida da NewsAPI.")
 
     else:
+with st.spinner("Pesquisando notícias..."):
 
-        with st.spinner("Pesquisando notícias..."):
-try:
+    try:
 
-                resultado = newsapi.get_everything(
-                    q=consulta,
-                    from_param=data_inicial.strftime("%Y-%m-%d"),
-                    to=data_final.strftime("%Y-%m-%d"),
-                    language="pt",
-                    sort_by="publishedAt",
-                    page_size=quantidade
-                )
+        resultado = newsapi.get_everything(
+            q=consulta,
+            from_param=data_inicial.strftime("%Y-%m-%d"),
+            to=data_final.strftime("%Y-%m-%d"),
+            language="pt",
+            sort_by="publishedAt",
+            page_size=quantidade
+        )
 
-                artigos = resultado["articles"]
+        artigos = resultado["articles"]
 
-                dados = []
+        dados = []
 
-                for artigo in artigos:
+        for artigo in artigos:
 
-                    dados.append({
+            dados.append({
 
-                        "Data": artigo["publishedAt"][:10],
+                "Data": artigo["publishedAt"][:10],
+                "Fonte": artigo["source"]["name"],
+                "Título": artigo["title"],
+                "Descrição": artigo["description"],
+                "URL": artigo["url"]
 
-                        "Fonte": artigo["source"]["name"],
+            })
 
-                        "Título": artigo["title"],
+        df = pd.DataFrame(dados)
 
-                        "Descrição": artigo["description"],
+        st.success(f"{len(df)} notícias encontradas.")
 
-                        "URL": artigo["url"]
+        st.dataframe(
+            df,
+            use_container_width=True,
+            hide_index=True
+        )
 
-                    })
+        csv = df.to_csv(index=False).encode("utf-8")
 
-                df = pd.DataFrame(dados)
+        st.download_button(
+            "📥 Baixar CSV",
+            csv,
+            "noticias.csv",
+            "text/csv"
+        )
 
-                st.success(f"{len(df)} notícias encontradas.")
+    except Exception as erro:
 
-                st.dataframe(
-                    df,
-                    use_container_width=True,
-                    hide_index=True
-                )
-
-                csv = df.to_csv(index=False).encode("utf-8")
-
-                st.download_button(
-                    "📥 Baixar CSV",
-                    csv,
-                    "noticias.csv",
-                    "text/csv"
-                )
-
-            except Exception as erro:
-
-                st.error(str(erro))            
+        st.error(str(erro))
