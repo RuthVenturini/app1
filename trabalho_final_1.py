@@ -270,35 +270,6 @@ if buscar:
             use_container_width=True
         )
 
-        # ----------------------------------------------------
-        # Mapa
-        # ----------------------------------------------------
-        if st.button("🗺️ Gerar mapa"):
-            uf = gpd.read_file("dados/BR_UF_2024.zip")
-            
-            mapa = uf.merge(
-                ocorrencias,
-                left_on="NM_UF",
-                right_on="Estado",
-                how="left"
-            )
-            
-            mapa["Ocorrências"] = mapa["Ocorrências"].fillna(0)
-    
-            fig, ax = plt.subplots(figsize=(8,10))
-            mapa.plot(
-                column="Ocorrências",
-                cmap="Reds",
-                linewidth=0.5,
-                edgecolor="black",
-                legend=True,
-                ax=ax
-            )
-            
-            ax.set_title("Violência contra a mulher por estado")
-            ax.axis("off")
-            st.pyplot(fig)
-    
 # ============================================================
 # Análises em Sessão (fora do botão Buscar)
 # ============================================================
