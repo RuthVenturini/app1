@@ -78,18 +78,33 @@ Clique no botão ℹ️ para criar gratuitamente sua chave.
 """
     )
 
+from datetime import date
+
 # ----------------------------------------------------
-# Ano
+# Período da pesquisa
 # ----------------------------------------------------
 
-anos = list(range(2000, 2027))
+st.sidebar.subheader("Período da pesquisa")
 
-ano = st.sidebar.selectbox(
-    "Ano da pesquisa",
-    anos,
-    index=len(anos)-1
+data_inicial = st.sidebar.date_input(
+    "Data inicial",
+    value=date(2024, 1, 1),
+    min_value=date(2010, 1, 1),
+    max_value=date.today(),
+    format="DD/MM/YYYY"
 )
 
+data_final = st.sidebar.date_input(
+    "Data final",
+    value=date(2024, 12, 31),
+    min_value=date(2010, 1, 1),
+    max_value=date.today(),
+    format="DD/MM/YYYY"
+)
+
+if data_final < data_inicial:
+    st.sidebar.error("A data final deve ser maior ou igual à data inicial.")
+    st.stop()
 # ----------------------------------------------------
 # Consulta
 # ----------------------------------------------------
@@ -134,7 +149,10 @@ if api_key:
 
 c1,c2,c3 = st.columns(3)
 
-c1.metric("Ano", ano)
+c1.metric(
+    "Período",
+    f"{data_inicial.strftime('%d/%m/%Y')} até {data_final.strftime('%d/%m/%Y')}"
+)
 
 c2.metric(
     "API",
@@ -164,17 +182,21 @@ if buscar:
 
             try:
 
-                resultado = newsapi.get_everything(
+               resultado = newsapi.get_everything(
 
-                    q=consulta,
+    q=consulta,
 
-                    language="pt",
+    from_param=data_inicial.strftime("%Y-%m-%d"),
 
-                    sort_by="publishedAt",
+    to=data_final.strftime("%Y-%m-%d"),
 
-                    page_size=quantidade
+    language="pt",
 
-                )
+    sort_by="publishedAt",
+
+    page_size=quantidade
+
+)
 
                 artigos = resultado["articles"]
 
