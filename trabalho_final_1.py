@@ -310,18 +310,15 @@ if buscar:
             "Sergipe",
             "Tocantins"
         ]
-        
-        def localizar_estado(texto):
 
-            texto = str(texto).lower()
+def localizar_estado(texto):
+    texto = str(texto).lower()
 
-            for estado in ESTADOS:
-
-            if estado.lower() in texto:
-
+    for estado in ESTADOS:
+        if estado.lower() in texto:
             return estado
-            
-        return None
+
+    return None
 
         df_final["Estado"] = (
 
