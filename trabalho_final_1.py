@@ -303,14 +303,15 @@ if buscar:
 # Análises em Sessão (fora do botão Buscar)
 # ============================================================
 
-if "df_final" in st.session_state:
+if "df_final" in st.session_state and "ocorrencias" in st.session_state:
 
     df_final = st.session_state["df_final"]
+    ocorrencias = st.session_state["ocorrencias"]
     
     st.divider()
-    st.header("📊 Análises")
+    st.header("📊 Análises e Espacialização")
 
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3)
         
     with col1:
         grafico_ano = st.button("📈 Notícias por ano", use_container_width=True)
@@ -318,8 +319,11 @@ if "df_final" in st.session_state:
     with col2:
         grafico_tema = st.button("📊 Notícias por tema", use_container_width=True)
         
+    with col3:
+        gerar_mapa = st.button("🗺️ Gerar mapa", use_container_width=True)
+        
     # ----------------------------------------------------
-    # Primeiro gráfico
+    # Primeiro gráfico (Pizza)
     # ----------------------------------------------------
             
     if grafico_ano:
@@ -340,7 +344,7 @@ if "df_final" in st.session_state:
         st.plotly_chart(fig, use_container_width=True)
             
     # ----------------------------------------------------
-    # Segundo gráfico
+    # Segundo gráfico (Barras)
     # ----------------------------------------------------
             
     if grafico_tema:
@@ -362,6 +366,45 @@ if "df_final" in st.session_state:
         )
             
         st.plotly_chart(fig, use_container_width=True)
+
+    # ----------------------------------------------------
+    # Mapa Temático
+    # ----------------------------------------------------
+    
+    if gerar_mapa:
+        try:
+            # Lê o shapefile/zip oficial
+            uf = gpd.read_file("dados/BR_UF_2024.zip")
+            
+            # Faz o join espacial usando o nome do estado (coluna NM_UF padrão do IBGE)
+            mapa = uf.merge(
+                ocorrencias,
+                left_on="NM_UF",
+                right_on="Estado",
+                how="left"
+            )
+            
+            mapa["Ocorrências"] = mapa["Ocorrências"].fillna(0)
+    
+            fig, ax = plt.subplots(figsize=(10, 10))
+            mapa.plot(
+                column="Ocorrências",
+                cmap="Reds",
+                linewidth=0.8,
+                edgecolor="black",
+                legend=True,
+                legend_kwds={'label': "Número de Notícias", 'orientation': "horizontal"},
+                ax=ax
+            )
+            
+            ax.set_title("Violência contra a mulher: Menções por Estado", fontdict={'fontsize': 14})
+            ax.axis("off")
+            st.pyplot(fig)
+            
+        except FileNotFoundError:
+            st.error("Erro: Arquivo cartográfico não encontrado. Certifique-se de que o arquivo 'BR_UF_2024.zip' (padrão IBGE) está salvo na pasta 'dados/'.")
+        except Exception as e:
+            st.error(f"Erro ao gerar o mapa: {e}")
 
 # ----------------------------------------------------
 # Informações
