@@ -501,58 +501,58 @@ if "df_final" in st.session_state:
         "📊 Notícias por tema",
         use_container_width=True
         )
-# ----------------------------------------------------
-# Primeiro gráfico
-# ----------------------------------------------------
-        
-if grafico_ano:
-        
-    dados = (
-    df_final
-    .groupby("Ano")
-    .size()
-    .reset_index(name="Quantidade")
-    )
-        
-    fig = px.pie(
-    dados,
-    names="Ano",
-    values="Quantidade",
-    title="Distribuição das notícias por ano"
-    )
-        
-    st.plotly_chart(
-    fig,
-    use_container_width=True
-    )
-        
-# ----------------------------------------------------
-# Segundo gráfico
-# ----------------------------------------------------
-        
-if grafico_tema:
-        
-     dados = (
-     df_final
-     .groupby(["Tema", "Ano"])
-     .size()
-     .reset_index(name="Quantidade")
-     )
-        
-     fig = px.bar(
-     dados,
-     x="Tema",
-     y="Quantidade",
-     color="Ano",
-     barmode="stack",
-     text_auto=True,
-     title="Quantidade de notícias por tema"
-     )
-        
-     st.plotly_chart(
-     fig,
-     use_container_width=True
-     )
+        # ----------------------------------------------------
+        # Primeiro gráfico
+        # ----------------------------------------------------
+                
+        if grafico_ano:
+                
+            dados = (
+            df_final
+            .groupby("Ano")
+            .size()
+            .reset_index(name="Quantidade")
+            )
+                
+            fig = px.pie(
+            dados,
+            names="Ano",
+            values="Quantidade",
+            title="Distribuição das notícias por ano"
+            )
+                
+            st.plotly_chart(
+            fig,
+            use_container_width=True
+            )
+                
+        # ----------------------------------------------------
+        # Segundo gráfico
+        # ----------------------------------------------------
+                
+        if grafico_tema:
+                
+             dados = (
+             df_final
+             .groupby(["Tema", "Ano"])
+             .size()
+             .reset_index(name="Quantidade")
+             )
+                
+             fig = px.bar(
+             dados,
+             x="Tema",
+             y="Quantidade",
+             color="Ano",
+             barmode="stack",
+             text_auto=True,
+             title="Quantidade de notícias por tema"
+             )
+                
+             st.plotly_chart(
+             fig,
+             use_container_width=True
+             )
 # ----------------------------------------------------
 # Informações
 # ----------------------------------------------------
