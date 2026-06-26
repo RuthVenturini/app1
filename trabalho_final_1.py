@@ -311,38 +311,38 @@ if buscar:
             "Tocantins"
         ]
 
-def localizar_estado(texto):
-    texto = str(texto).lower()
-
-    for estado in ESTADOS:
-        if estado.lower() in texto:
-            return estado
-
-    return None
-
-        df_final["Estado"] = (
-
-            df_final["Título"].fillna("") +
-
-            " " +
-
-            df_final["Resumo"].fillna("")
-
-        ).apply(localizar_estado)
-
-        ocorrencias = (
-
-            df_final
-        
-            .dropna(subset=["Estado"])
-        
-            .groupby("Estado")
-        
-            .size()
-        
-            .reset_index(name="Ocorrências")
-        
-        )
+            def localizar_estado(texto):
+                texto = str(texto).lower()
+            
+                for estado in ESTADOS:
+                    if estado.lower() in texto:
+                        return estado
+            
+                return None
+            
+                    df_final["Estado"] = (
+            
+                        df_final["Título"].fillna("") +
+            
+                        " " +
+            
+                        df_final["Resumo"].fillna("")
+            
+                    ).apply(localizar_estado)
+            
+                    ocorrencias = (
+            
+                        df_final
+                    
+                        .dropna(subset=["Estado"])
+                    
+                        .groupby("Estado")
+                    
+                        .size()
+                    
+                        .reset_index(name="Ocorrências")
+                    
+                    )
         
         # Salva o DataFrame para reutilização
         st.session_state["df_final"] = df_final
