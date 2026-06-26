@@ -344,9 +344,9 @@ if "df_final" in st.session_state and "ocorrencias" in st.session_state:
     
     if gerar_mapa:
         try:
-            url_github = "https://github.com/RuthVenturini/app1/blob/main/BR_UF_2024.zip"
-            # Lê o shapefile/zip oficial
-            uf = gpd.read_file("url_github")
+        
+            # Lê o GeoPackage
+            uf = gpd.read_file("BR_UF.gpkg")
             
             # Faz o join espacial usando o nome do estado (coluna NM_UF padrão do IBGE)
             mapa = uf.merge(
