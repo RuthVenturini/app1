@@ -10,6 +10,8 @@ Original file is located at
 import streamlit as st
 import pandas as pd
 import requests
+import time
+from urllib.parse import quote_plus
 # ----------------------------------------------------
 # Configuração da página
 # ----------------------------------------------------
@@ -87,23 +89,16 @@ if data_final < data_inicial:
 # Consulta
 # ----------------------------------------------------
 
-PALAVRAS_CHAVE = (
-    '"violência contra mulher" OR '
-    'feminicídio OR '
-    '"violência doméstica"'
-)
-
-st.sidebar.markdown("### Palavras-chave utilizadas")
-st.sidebar.info(PALAVRAS_CHAVE)
-
-consulta = PALAVRAS_CHAVE
-
+PALAVRAS = [
+    '"violência contra mulher"',
+    '"violência doméstica"',
+    'feminicídio'
+]
 quantidade = st.sidebar.selectbox(
-    "Quantidade máxima",
-    [20,50,100,200],
-    index=1
+    "Máximo de notícias por palavra-chave",
+    [10, 20, 50, 100],
+    index=0
 )
-
 buscar = st.sidebar.button(
     "🔎 Buscar Notícias",
     use_container_width=True
@@ -112,22 +107,8 @@ buscar = st.sidebar.button(
 # ----------------------------------------------------
 # Inicialização
 # ----------------------------------------------------
-
-st.warning(
-    """
-    ⚠️ **Importante**
-
-    Este aplicativo utiliza a **GDELT 2.1 Document API**.
-
-    A cobertura histórica é significativamente melhor a partir de **2015**.
-
-    Pesquisas anteriores a 2015 podem retornar poucos ou nenhum resultado,
-    dependendo do tema e dos veículos indexados.
-    """
-)
 inicio = data_inicial.strftime("%Y%m%d000000")
 fim = data_final.strftime("%Y%m%d235959")
-
 # ----------------------------------------------------
 # Área principal
 # ----------------------------------------------------
@@ -160,44 +141,56 @@ if buscar:
 
         try:
 
-            consulta = (
-                '"violência contra mulher" OR '
-                '"violência doméstica" OR '
-                'feminicídio'
-            )
-
             inicio = data_inicial.strftime("%Y%m%d000000")
             fim = data_final.strftime("%Y%m%d235959")
 
+            headers = {
+    "User-Agent":
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+}
+
+            todos = []
+
+    for palavra in PALAVRAS:
+            consulta = quote_plus(palavra)
+
             url = (
-                "https://api.gdeltproject.org/api/v2/doc/doc"
-                f"?query={consulta}"
-                f"&mode=ArtList"
-                f"&format=json"
-                f"&maxrecords={quantidade}"
-                f"&startdatetime={inicio}"
-                f"&enddatetime={fim}"
-            )
+    "https://api.gdeltproject.org/api/v2/doc/doc"
+    f"?query={consulta}"
+    "&mode=ArtList"
+    "&format=json"
+    "&sort=DateDesc"
+    "&language=Portuguese"
+    f"&maxrecords={quantidade}"
+    f"&startdatetime={inicio}"
+    f"&enddatetime={fim}"
+)
+                resposta = requests.get(
+                    url,
+                    headers=headers,
+                    timeout=60
+                )
 
-            resposta = requests.get(url, timeout=60)
+                if resposta.status_code != 200:
+                    st.warning(
+                        f"Consulta '{palavra}' retornou código {resposta.status_code}."
+                    )
+                    continue
 
-            resposta.raise_for_status()
+    try:
+        resultado = resposta.json()
+    except ValueError:
+        st.error("A GDELT retornou uma resposta inválida.")
+        st.code(resposta.text[:1000])
+        st.stop()
 
-            resultado = resposta.json()
-
-            artigos = resultado.get("articles", [])
-
-            if len(artigos) == 0:
-
-                st.warning("Nenhuma notícia encontrada.")
-
-            else:
-
-                dados = []
+                artigos = resultado.get("articles", [])
 
                 for artigo in artigos:
 
-                    dados.append({
+                    todos.append({
+
+                        "Palavra-chave": palavra,
 
                         "Data": artigo.get("seendate"),
 
@@ -205,15 +198,30 @@ if buscar:
 
                         "Fonte": artigo.get("domain"),
 
-                        "URL": artigo.get("url"),
+                        "Idioma": artigo.get("language"),
 
-                        "Idioma": artigo.get("language")
+                        "URL": artigo.get("url")
 
                     })
 
-                df = pd.DataFrame(dados)
+                time.sleep(2)
 
-                st.success(f"{len(df)} notícias encontradas.")
+            if len(todos) == 0:
+
+                st.warning("Nenhuma notícia encontrada.")
+
+            else:
+
+                df = pd.DataFrame(todos)
+
+                df.drop_duplicates(
+                    subset=["URL"],
+                    inplace=True
+                )
+
+                st.success(
+                    f"{len(df)} notícias encontradas."
+                )
 
                 st.dataframe(
                     df.head(20),
