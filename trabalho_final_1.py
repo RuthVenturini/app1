@@ -11,6 +11,8 @@ import pandas as pd
 import feedparser
 import plotly.express as px
 from urllib.parse import quote_plus
+import geopandas as gpd
+import matplotlib.pyplot as plt
 
 # --------------------------------------------------------
 # Configuração da página
@@ -278,6 +280,72 @@ if buscar:
         )
         
         df_final["Ano"] = df_final["Data"].dt.year
+
+        ESTADOS = [
+            "Acre",
+            "Alagoas",
+            "Amapá",
+            "Amazonas",
+            "Bahia",
+            "Ceará",
+            "Distrito Federal",
+            "Espírito Santo",
+            "Goiás",
+            "Maranhão",
+            "Mato Grosso",
+            "Mato Grosso do Sul",
+            "Minas Gerais",
+            "Pará",
+            "Paraíba",
+            "Paraná",
+            "Pernambuco",
+            "Piauí",
+            "Rio de Janeiro",
+            "Rio Grande do Norte",
+            "Rio Grande do Sul",
+            "Rondônia",
+            "Roraima",
+            "Santa Catarina",
+            "São Paulo",
+            "Sergipe",
+            "Tocantins"
+        ]
+        
+        def localizar_estado(texto):
+
+            texto = str(texto).lower()
+
+            for estado in ESTADOS:
+
+            if estado.lower() in texto:
+
+            return estado
+            
+        return None
+
+        df_final["Estado"] = (
+
+            df_final["Título"].fillna("") +
+
+            " " +
+
+            df_final["Resumo"].fillna("")
+
+        ).apply(localizar_estado)
+
+        ocorrencias = (
+
+            df_final
+        
+            .dropna(subset=["Estado"])
+        
+            .groupby("Estado")
+        
+            .size()
+        
+            .reset_index(name="Ocorrências")
+        
+        )
         
         # Salva o DataFrame para reutilização
         st.session_state["df_final"] = df_final
@@ -355,6 +423,63 @@ if buscar:
 
         )
         
+        st.button("🗺️ Gerar mapa")
+        if st.button("🗺️ Gerar mapa"):
+        uf = gpd.read_file(
+            "dados/BR_UF_2024.zip"
+        )
+
+        mapa = uf.merge(
+        
+            ocorrencias,
+        
+            left_on="NM_UF",
+        
+            right_on="Estado",
+        
+            how="left"
+        
+        )
+        
+        mapa["Ocorrências"] = (
+    
+            mapa["Ocorrências"]
+        
+            .fillna(0)
+        
+        )
+
+        fig, ax = plt.subplots(
+        
+            figsize=(8,10)
+        
+        )
+        
+    mapa.plot(
+
+        column="Ocorrências",
+    
+        cmap="Reds",
+    
+        linewidth=0.5,
+    
+        edgecolor="black",
+    
+        legend=True,
+    
+        ax=ax
+    
+    )
+    ax.set_title(
+
+        "Violência contra a mulher por estado"
+    
+    )
+    
+    ax.axis("off")
+    
+    st.pyplot(fig)
+    
 if "df_final" in st.session_state:
 
     df_final = st.session_state["df_final"]
