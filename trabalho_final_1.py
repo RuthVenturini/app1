@@ -31,18 +31,20 @@ st.info("""
 Protótipo desenvolvido para pesquisa de notícias relacionadas
 à violência contra a mulher.
 
-**Fonte utilizada nesta versão**
+**Fonte utilizada**
 
 Google News RSS
 
-**Observação**
+**Observações**
 
-Esta versão é um protótipo. O ano selecionado é utilizado
-para manter compatibilidade com a arquitetura do projeto,
-mas a pesquisa depende dos resultados disponibilizados
-pelo Google News.
+• Não necessita de chave de API.
+
+• O Google News RSS disponibiliza as notícias disponíveis
+no momento da consulta.
+
+• O objetivo desta versão é validar o fluxo de coleta
+para as próximas etapas do projeto.
 """)
-
 st.markdown("---")
 
 # --------------------------------------------------------
@@ -51,51 +53,44 @@ st.markdown("---")
 
 st.sidebar.header("Pesquisa")
 
-ANOS = list(range(2015, 2027))
-
-ano = st.sidebar.selectbox(
-    "Ano",
-    ANOS,
-    index=len(ANOS)-1
-)
-
 # --------------------------------------------------------
 # Palavras-chave
 # --------------------------------------------------------
 
-PALAVRAS = [
-
-    "violência contra mulher",
-
-    "violência doméstica",
-
-    "feminicídio",
-
-    "Lei Maria da Penha",
-
-    "violência sexual"
-
-]
-
-st.sidebar.markdown("### Temas pesquisados")
-
-for palavra in PALAVRAS:
-
-    st.sidebar.write(f"• {palavra}")
-
+TEMAS = {
+    "Violência contra a mulher": "violência contra mulher",
+    "Violência doméstica": "violência doméstica",
+    "Feminicídio": "feminicídio",
+    "Lei Maria da Penha": '"Lei Maria da Penha"',
+    "Violência sexual": "violência sexual",
+    "Assédio": "assédio contra mulher",
+    "Agressão": "agressão contra mulher",
+    "Violência psicológica": "violência psicológica mulher",
+    "Violência patrimonial": "violência patrimonial mulher",
+    "Violência moral": "violência moral mulher"
+}
+st.sidebar.selectbox(
+    "Fonte de dados",
+    ["Google News RSS"],
+    index=0
+)
+st.sidebar.selectbox(
+    "Idioma",
+    ["Português"],
+    index=0
+)
+temas_escolhidos = st.sidebar.multiselect(
+    "Tipos de violência",
+    options=list(TEMAS.keys()),
+    default=[
+        "Violência contra a mulher",
+        "Violência doméstica",
+        "Feminicídio"
+    ]
+)
 # --------------------------------------------------------
 # Quantidade
 # --------------------------------------------------------
-
-quantidade = st.sidebar.selectbox(
-
-    "Máximo de notícias por tema",
-
-    [10,20,30,50],
-
-    index=1
-
-)
 
 buscar = st.sidebar.button(
 
@@ -112,27 +107,18 @@ buscar = st.sidebar.button(
 c1,c2,c3 = st.columns(3)
 
 c1.metric(
-
-    "Ano",
-
-    ano
-
+    "Fonte",
+    "Google News RSS"
 )
 
 c2.metric(
-
-    "Fonte",
-
-    "Google News RSS"
-
+    "Temas",
+    len(temas_escolhidos)
 )
 
 c3.metric(
-
-    "Temas",
-
-    len(PALAVRAS)
-
+    "Status",
+    "Pronto"
 )
 
 st.divider()
@@ -141,8 +127,11 @@ st.divider()
 # Função de busca
 # ============================================================
 
-def buscar_google_news(consulta, quantidade=20):
+# ============================================================
+# Função de busca
+# ============================================================
 
+def buscar_google_news(consulta):
     """
     Pesquisa notícias utilizando Google News RSS.
     """
@@ -161,26 +150,34 @@ def buscar_google_news(consulta, quantidade=20):
 
     noticias = []
 
-    for noticia in feed.entries[:quantidade]:
+    for noticia in feed.entries:
 
         noticias.append({
 
-            "Tema": consulta,
+            "Tema": consulta.replace("+", " "),
 
-            "Título": noticia.get("title",""),
+            "Título": noticia.get("title", ""),
 
-            "Data": noticia.get("published",""),
+            "Data": noticia.get("published", ""),
 
-            "Link": noticia.get("link","")
+            "Link": noticia.get("link", "")
 
         })
 
     return pd.DataFrame(noticias)
-    # ============================================================
+
+
+# ============================================================
 # EXECUÇÃO DA PESQUISA
 # ============================================================
 
 if buscar:
+
+    if len(temas_escolhidos) == 0:
+
+        st.warning("Selecione pelo menos um tipo de violência.")
+
+        st.stop()
 
     st.subheader("🔎 Consultando Google News RSS")
 
@@ -188,20 +185,19 @@ if buscar:
 
     status = st.empty()
 
+    consultas = [TEMAS[t] for t in temas_escolhidos]
+
     todas_noticias = []
 
-    total_temas = len(PALAVRAS)
+    total_temas = len(consultas)
 
-    for indice, palavra in enumerate(PALAVRAS):
+    for indice, palavra in enumerate(consultas):
 
         status.info(f"Pesquisando: **{palavra}**")
 
         try:
 
-            df = buscar_google_news(
-                palavra,
-                quantidade
-            )
+            df = buscar_google_news(palavra)
 
             if not df.empty:
 
@@ -232,17 +228,19 @@ if buscar:
             ignore_index=True
         )
 
-        # Remove notícias repetidas
         df_final.drop_duplicates(
             subset=["Link"],
             inplace=True
         )
 
-        # Ordenação
-        df_final.sort_values(
-            by="Data",
-            ascending=False,
-            inplace=True
+        # ----------------------------------------------------
+        # Extrair portal
+        # ----------------------------------------------------
+
+        df_final["Portal"] = (
+            df_final["Link"]
+            .str.extract(r"https?://(?:www\.)?([^/]+)")
+            .fillna("")
         )
 
         # ----------------------------------------------------
@@ -262,12 +260,12 @@ if buscar:
 
         c2.metric(
             "Temas pesquisados",
-            len(PALAVRAS)
+            len(temas_escolhidos)
         )
 
         c3.metric(
-            "Ano selecionado",
-            ano
+            "Portais",
+            df_final["Portal"].nunique()
         )
 
         st.divider()
@@ -280,7 +278,15 @@ if buscar:
 
         st.dataframe(
 
-            df_final.head(20),
+            df_final[
+                [
+                    "Tema",
+                    "Data",
+                    "Portal",
+                    "Título",
+                    "Link"
+                ]
+            ].head(20),
 
             use_container_width=True,
 
@@ -302,7 +308,7 @@ if buscar:
 
             csv,
 
-            file_name=f"noticias_google_{ano}.csv",
+            file_name="noticias_google.csv",
 
             mime="text/csv",
 
@@ -316,15 +322,20 @@ if buscar:
 
         with st.expander("ℹ️ Sobre esta busca"):
 
-            st.write("""
-
+            st.write(
+                """
 Esta versão utiliza o **Google News RSS**.
 
-As notícias representam os resultados disponibilizados
-pelo Google News no momento da consulta.
+Os resultados correspondem às notícias
+disponibilizadas pelo Google News no momento
+da consulta.
 
-O ano selecionado é mantido para compatibilidade com
-as próximas versões do projeto, que utilizarão uma
-base histórica de notícias.
+Próximas etapas do projeto:
 
-""")
+- Processamento de Linguagem Natural (PLN)
+- Identificação automática do estado citado
+- Estatísticas
+- Gráficos
+- Mapa temático
+"""
+            )
