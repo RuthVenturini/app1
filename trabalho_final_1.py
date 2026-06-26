@@ -126,16 +126,15 @@ st.divider()
 # ============================================================
 # Função de busca
 # ============================================================
-
-# ============================================================
-# Função de busca
-# ============================================================
-
 def buscar_google_news(consulta):
     """
     Pesquisa notícias utilizando Google News RSS.
     """
 
+    # Guarda o texto original
+    tema = consulta
+
+    # Codifica apenas para montar a URL
     consulta = quote_plus(consulta)
 
     url = (
@@ -154,7 +153,7 @@ def buscar_google_news(consulta):
 
         noticias.append({
 
-            "Tema": consulta.replace("+", " "),
+            "Tema": tema,
 
             "Título": noticia.get("title", ""),
 
@@ -165,8 +164,6 @@ def buscar_google_news(consulta):
         })
 
     return pd.DataFrame(noticias)
-
-
 # ============================================================
 # EXECUÇÃO DA PESQUISA
 # ============================================================
@@ -233,15 +230,24 @@ if buscar:
             inplace=True
         )
 
-        # ----------------------------------------------------
-        # Extrair portal
-        # ----------------------------------------------------
+       # ----------------------------------------------------
+# Extrair o portal a partir do título
+# ----------------------------------------------------
 
-        df_final["Portal"] = (
-            df_final["Link"]
-            .str.extract(r"https?://(?:www\.)?([^/]+)")
-            .fillna("")
-        )
+df_final["Portal"] = (
+    df_final["Título"]
+    .str.extract(r"-\s*(.+)$", expand=False)
+    .fillna("Não identificado")
+)
+
+# ----------------------------------------------------
+# Limpar o título (remover o nome do portal)
+# ----------------------------------------------------
+
+df_final["Título"] = (
+    df_final["Título"]
+    .str.replace(r"\s*-\s*.+$", "", regex=True)
+)
 
         # ----------------------------------------------------
         # Estatísticas
