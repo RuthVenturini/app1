@@ -109,10 +109,16 @@ if data_final < data_inicial:
 # Consulta
 # ----------------------------------------------------
 
-consulta = st.sidebar.text_input(
-    "Palavras-chave",
-    value="violência contra mulher OR feminicídio OR violência doméstica"
+PALAVRAS_CHAVE = (
+    '"violência contra mulher" OR '
+    'feminicídio OR '
+    '"violência doméstica"'
 )
+
+st.sidebar.markdown("### Palavras-chave utilizadas")
+st.sidebar.info(PALAVRAS_CHAVE)
+
+consulta = PALAVRAS_CHAVE
 
 quantidade = st.sidebar.selectbox(
     "Quantidade máxima",
@@ -179,24 +185,16 @@ if buscar:
     else:
 
         with st.spinner("Pesquisando notícias..."):
+try:
 
-            try:
-
-               resultado = newsapi.get_everything(
-
-    q=consulta,
-
-    from_param=data_inicial.strftime("%Y-%m-%d"),
-
-    to=data_final.strftime("%Y-%m-%d"),
-
-    language="pt",
-
-    sort_by="publishedAt",
-
-    page_size=quantidade
-
-)
+                resultado = newsapi.get_everything(
+                    q=consulta,
+                    from_param=data_inicial.strftime("%Y-%m-%d"),
+                    to=data_final.strftime("%Y-%m-%d"),
+                    language="pt",
+                    sort_by="publishedAt",
+                    page_size=quantidade
+                )
 
                 artigos = resultado["articles"]
 
@@ -231,17 +229,12 @@ if buscar:
                 csv = df.to_csv(index=False).encode("utf-8")
 
                 st.download_button(
-
                     "📥 Baixar CSV",
-
                     csv,
-
                     "noticias.csv",
-
                     "text/csv"
-
                 )
 
             except Exception as erro:
 
-                st.error(str(erro))
+                st.error(str(erro))            
