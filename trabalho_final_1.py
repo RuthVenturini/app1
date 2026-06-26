@@ -368,6 +368,25 @@ if "df_final" in st.session_state and "ocorrencias" in st.session_state:
                 legend_kwds={'label': "Número de Notícias", 'orientation': "horizontal"},
                 ax=ax
             )
+
+            for idx, row in mapa.iterrows():
+                            if row['geometry'] is not None:
+                                # O método representative_point() garante que a coordenada fique estritamente dentro do polígono
+                                ponto = row['geometry'].representative_point()
+                                
+                                # Busca a sigla (tenta maiúsculo padrão IBGE, ou minúsculo conforme você citou)
+                                sigla = row.get('SIGLA_UF', row.get('sigla_uf', ''))
+                                
+                                if pd.notna(sigla) and sigla != '':
+                                    ax.annotate(
+                                        text=sigla,
+                                        xy=(ponto.x, ponto.y),
+                                        ha='center',
+                                        va='center',
+                                        fontsize=9,
+                                        color='black',
+                                        weight='bold'
+                                    )
             
             ax.set_title("Violência contra a mulher: Menções por Estado", fontdict={'fontsize': 14})
             ax.axis("off")
@@ -391,12 +410,5 @@ Os resultados correspondem às notícias
 disponibilizadas pelo Google News no momento
 da consulta.
 
-Próximas etapas do projeto:
-
-- Processamento de Linguagem Natural (PLN)
-- Identificação automática do estado citado
-- Estatísticas
-- Gráficos
-- Mapa temático
 """
     )
