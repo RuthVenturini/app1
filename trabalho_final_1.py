@@ -126,6 +126,7 @@ st.divider()
 # ============================================================
 # Função de busca
 # ============================================================
+@st.cache_data(show_spinner=False)
 def buscar_google_news(consulta):
     """
     Pesquisa notícias utilizando Google News RSS.
@@ -156,6 +157,8 @@ def buscar_google_news(consulta):
             "Tema": tema,
 
             "Título": noticia.get("title", ""),
+            
+            "Resumo": noticia.get("summary",""),
 
             "Data": noticia.get("published", ""),
 
@@ -209,6 +212,7 @@ if buscar:
         barra.progress((indice + 1) / total_temas)
 
     status.empty()
+    barra.empty()
 
     # --------------------------------------------------------
     # Consolidação
@@ -224,30 +228,38 @@ if buscar:
             todas_noticias,
             ignore_index=True
         )
+        df_final.reset_index(
+            drop=True,
+            inplace=True
+        )
 
         df_final.drop_duplicates(
             subset=["Link"],
             inplace=True
         )
 
-       # ----------------------------------------------------
-# Extrair o portal a partir do título
-# ----------------------------------------------------
+        # ----------------------------------------------------
+        # Extrair o portal a partir do título
+        # ----------------------------------------------------
 
-df_final["Portal"] = (
-    df_final["Título"]
-    .str.extract(r"-\s*(.+)$", expand=False)
-    .fillna("Não identificado")
-)
-
-# ----------------------------------------------------
-# Limpar o título (remover o nome do portal)
-# ----------------------------------------------------
-
-df_final["Título"] = (
-    df_final["Título"]
-    .str.replace(r"\s*-\s*.+$", "", regex=True)
-)
+        df_final["Portal"] = (
+            df_final["Título"]
+            .str.extract(r"[-|—]\s*(.+)$", expand=False)
+            .fillna("Não identificado")
+        )
+        
+        # ----------------------------------------------------
+        # Limpar o título (remover o nome do portal)
+        # ----------------------------------------------------
+        
+        df_final["Título"] = (
+            df_final["Título"]
+            .str.replace(
+                r"\s*[-|—]\s*.+$",
+                "",
+                regex=True
+            )
+        )
 
         # ----------------------------------------------------
         # Estatísticas
