@@ -278,7 +278,9 @@ if buscar:
         )
         
         df_final["Ano"] = df_final["Data"].dt.year
-
+        
+        # Salva o DataFrame para reutilização
+        st.session_state["df_final"] = df_final
         # ----------------------------------------------------
         # Estatísticas
         # ----------------------------------------------------
@@ -352,83 +354,87 @@ if buscar:
             use_container_width=True
 
         )
+        
+if "df_final" in st.session_state:
 
-        st.divider()
+    df_final = st.session_state["df_final"]
+    
+    st.divider()
         
-        st.header("📊 Análises")
+    st.header("📊 Análises")
 
-        col1, col2 = st.columns(2)
+    col1, col2 = st.columns(2)
         
-        with col1:
+    with col1:
         
-            grafico_ano = st.button(
-                "📈 Notícias por ano",
-                use_container_width=True
-            )
+        grafico_ano = st.button(
+        "📈 Notícias por ano",
+        use_container_width=True
+        )
         
-        with col2:
+    with col2:
         
-            grafico_tema = st.button(
-                "📊 Notícias por tema",
-                use_container_width=True
-            )
-        # ----------------------------------------------------
-        # Primeiro gráfico
-        # ----------------------------------------------------
+        grafico_tema = st.button(
+        "📊 Notícias por tema",
+        use_container_width=True
+        )
+# ----------------------------------------------------
+# Primeiro gráfico
+# ----------------------------------------------------
         
-        if grafico_ano:
+if grafico_ano:
         
-            dados = (
-                df_final
-                .groupby("Ano")
-                .size()
-                .reset_index(name="Quantidade")
-            )
+    dados = (
+    df_final
+    .groupby("Ano")
+    .size()
+    .reset_index(name="Quantidade")
+    )
         
-            fig = px.pie(
-                dados,
-                names="Ano",
-                values="Quantidade",
-                title="Distribuição das notícias por ano"
-            )
+    fig = px.pie(
+    dados,
+    names="Ano",
+    values="Quantidade",
+    title="Distribuição das notícias por ano"
+    )
         
-            st.plotly_chart(
-                fig,
-                use_container_width=True
-            )
+    st.plotly_chart(
+    fig,
+    use_container_width=True
+    )
         
-        # ----------------------------------------------------
-        # Segundo gráfico
-        # ----------------------------------------------------
+# ----------------------------------------------------
+# Segundo gráfico
+# ----------------------------------------------------
         
-        if grafico_tema:
+if grafico_tema:
         
-            dados = (
-                df_final
-                .groupby(["Tema", "Ano"])
-                .size()
-                .reset_index(name="Quantidade")
-            )
+     dados = (
+     df_final
+     .groupby(["Tema", "Ano"])
+     .size()
+     .reset_index(name="Quantidade")
+     )
         
-            fig = px.bar(
-                dados,
-                x="Tema",
-                y="Quantidade",
-                color="Ano",
-                barmode="stack",
-                text_auto=True,
-                title="Quantidade de notícias por tema"
-            )
+     fig = px.bar(
+     dados,
+     x="Tema",
+     y="Quantidade",
+     color="Ano",
+     barmode="stack",
+     text_auto=True,
+     title="Quantidade de notícias por tema"
+     )
         
-            st.plotly_chart(
-                fig,
-                use_container_width=True
-            )
-        # ----------------------------------------------------
-        # Informações
-        # ----------------------------------------------------
+     st.plotly_chart(
+     fig,
+     use_container_width=True
+     )
+# ----------------------------------------------------
+# Informações
+# ----------------------------------------------------
 
-        with st.expander("ℹ️ Sobre esta busca"):
+with st.expander("ℹ️ Sobre esta busca"):
 
             st.write(
                 """
