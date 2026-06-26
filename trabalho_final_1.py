@@ -34,20 +34,8 @@ st.info("""
 Protótipo desenvolvido para pesquisa de notícias relacionadas
 à violência contra a mulher.
 
-**Fonte utilizada**
-
-Google News RSS
-
-**Observações**
-
-• Não necessita de chave de API.
-
-• O Google News RSS disponibiliza as notícias disponíveis
-no momento da consulta.
-
-• O objetivo desta versão é validar o fluxo de coleta
-para as próximas etapas do projeto.
 """)
+
 st.markdown("---")
 
 # --------------------------------------------------------
