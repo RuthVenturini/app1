@@ -2,3 +2,7 @@ streamlit
 pandas
 feedparser
 plotly
+beautifulsoup4
+lxml
+geopandas
+matplotlib
