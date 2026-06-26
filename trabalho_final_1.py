@@ -9,8 +9,7 @@ Original file is located at
 
 import streamlit as st
 import pandas as pd
-from newsapi import NewsApiClient
-
+import requests
 # ----------------------------------------------------
 # Configuração da página
 # ----------------------------------------------------
@@ -22,6 +21,19 @@ st.set_page_config(
 )
 
 st.title("📰 Agente IA - Violência contra a Mulher no Brasil")
+st.warning("""
+⚠️ **Aviso**
+
+Este aplicativo utiliza a **GDELT 2.1 Document API**.
+
+• Não requer chave de API.
+
+• A cobertura histórica é muito melhor a partir de 2015.
+
+• Consultas para períodos anteriores podem retornar poucos ou nenhum resultado.
+
+• A API possui limite de resultados por consulta.
+""")
 
 st.markdown("""
 Este agente utiliza **Processamento de Linguagem Natural (PLN)** para identificar,
@@ -43,41 +55,7 @@ no Brasil para um ano específico.
 # ----------------------------------------------------
 
 st.sidebar.title("Configuração")
-
-st.sidebar.subheader("NewsAPI")
-
-col1, col2 = st.sidebar.columns([5,1])
-
-with col1:
-
-    api_key = st.text_input(
-        "Chave da NewsAPI",
-        type="password",
-        placeholder="Cole sua chave aqui..."
-    )
-
-with col2:
-
-    st.link_button(
-        "ℹ️",
-        "https://newsapi.org/register",
-        help="""
-Crie gratuitamente sua chave na NewsAPI.
-
-Clique para acessar o site oficial.
-"""
-    )
-
-if not api_key:
-
-    st.sidebar.info(
-        """
-Para utilizar o sistema é necessário possuir uma chave da NewsAPI.
-
-Clique no botão ℹ️ para criar gratuitamente sua chave.
-"""
-    )
-
+st.sidebar.success("Fonte de dados: GDELT 2.1 Document API")
 from datetime import date
 
 # ----------------------------------------------------
@@ -89,7 +67,7 @@ st.sidebar.subheader("Período da pesquisa")
 data_inicial = st.sidebar.date_input(
     "Data inicial",
     value=date(2024, 1, 1),
-    min_value=date(2010, 1, 1),
+    min_value=date(2015, 1, 1),
     max_value=date.today(),
     format="DD/MM/YYYY"
 )
@@ -97,7 +75,7 @@ data_inicial = st.sidebar.date_input(
 data_final = st.sidebar.date_input(
     "Data final",
     value=date(2024, 12, 31),
-    min_value=date(2010, 1, 1),
+    min_value=date(2015, 1, 1),
     max_value=date.today(),
     format="DD/MM/YYYY"
 )
@@ -135,19 +113,20 @@ buscar = st.sidebar.button(
 # Inicialização
 # ----------------------------------------------------
 
-newsapi = None
+st.warning(
+    """
+    ⚠️ **Importante**
 
-if api_key:
+    Este aplicativo utiliza a **GDELT 2.1 Document API**.
 
-    try:
+    A cobertura histórica é significativamente melhor a partir de **2015**.
 
-        newsapi = NewsApiClient(api_key=api_key)
-
-        st.sidebar.success("NewsAPI conectada.")
-
-    except Exception as erro:
-
-        st.sidebar.error(str(erro))
+    Pesquisas anteriores a 2015 podem retornar poucos ou nenhum resultado,
+    dependendo do tema e dos veículos indexados.
+    """
+)
+inicio = data_inicial.strftime("%Y%m%d000000")
+fim = data_final.strftime("%Y%m%d235959")
 
 # ----------------------------------------------------
 # Área principal
@@ -161,8 +140,8 @@ c1.metric(
 )
 
 c2.metric(
-    "API",
-    "Conectada" if newsapi else "Não conectada"
+    "Fonte",
+    "GDELT 2.1"
 )
 
 c3.metric(
@@ -177,37 +156,59 @@ st.divider()
 # ----------------------------------------------------
 if buscar:
 
-    if not newsapi:
+    with st.spinner("Consultando a GDELT..."):
 
-        st.error("Informe uma chave válida da NewsAPI.")
+        try:
 
-    else:
+            consulta = (
+                '"violência contra mulher" OR '
+                '"violência doméstica" OR '
+                'feminicídio'
+            )
 
-        with st.spinner("Pesquisando notícias..."):
+            inicio = data_inicial.strftime("%Y%m%d000000")
+            fim = data_final.strftime("%Y%m%d235959")
 
-            try:
+            url = (
+                "https://api.gdeltproject.org/api/v2/doc/doc"
+                f"?query={consulta}"
+                f"&mode=ArtList"
+                f"&format=json"
+                f"&maxrecords={quantidade}"
+                f"&startdatetime={inicio}"
+                f"&enddatetime={fim}"
+            )
 
-                resultado = newsapi.get_everything(
-                    q=consulta,
-                    from_param=data_inicial.strftime("%Y-%m-%d"),
-                    to=data_final.strftime("%Y-%m-%d"),
-                    language="pt",
-                    sort_by="publishedAt",
-                    page_size=quantidade
-                )
+            resposta = requests.get(url, timeout=60)
 
-                artigos = resultado["articles"]
+            resposta.raise_for_status()
+
+            resultado = resposta.json()
+
+            artigos = resultado.get("articles", [])
+
+            if len(artigos) == 0:
+
+                st.warning("Nenhuma notícia encontrada.")
+
+            else:
 
                 dados = []
 
                 for artigo in artigos:
 
                     dados.append({
-                        "Data": artigo["publishedAt"][:10],
-                        "Fonte": artigo["source"]["name"],
-                        "Título": artigo["title"],
-                        "Descrição": artigo["description"],
-                        "URL": artigo["url"]
+
+                        "Data": artigo.get("seendate"),
+
+                        "Título": artigo.get("title"),
+
+                        "Fonte": artigo.get("domain"),
+
+                        "URL": artigo.get("url"),
+
+                        "Idioma": artigo.get("language")
+
                     })
 
                 df = pd.DataFrame(dados)
@@ -215,20 +216,18 @@ if buscar:
                 st.success(f"{len(df)} notícias encontradas.")
 
                 st.dataframe(
-                    df,
+                    df.head(20),
                     use_container_width=True,
                     hide_index=True
                 )
 
-                csv = df.to_csv(index=False).encode("utf-8")
-
                 st.download_button(
                     "📥 Baixar CSV",
-                    csv,
+                    df.to_csv(index=False).encode("utf-8"),
                     "noticias.csv",
                     "text/csv"
                 )
 
-            except Exception as erro:
+        except Exception as erro:
 
-                st.error(f"Erro: {erro}")
+            st.error(f"Erro: {erro}")
